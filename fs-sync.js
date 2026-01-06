@@ -52,18 +52,26 @@ function initSync(serverUrl = 'ws://localhost:8080') {
                     await INFINITY_FS.createEntry(localEntry);
                 } else if (version === localEntry.version) {
                     // Erweiterte Konfliktlösung
-                    const base = localEntry.history && localEntry.history.length > 1 
-                        ? localEntry.history[localEntry.history.length - 2].content 
-                        : '';
-                    const result = await CONFLICT_RESOLVER.resolveConflict(path, localEntry.content, content, base);
-                    if (result.status === 'auto-merged') {
-                        await syncChange(path, result.content, 'merge');
-                    } else {
-                        // UI-Notification (siehe index.html)
-                        showConflictNotification(path, result.diff);
+                    try {
+                        const base = localEntry.history && localEntry.history.length > 1 
+                            ? localEntry.history[localEntry.history.length - 2].content 
+                            : '';
+                        const result = await CONFLICT_RESOLVER.resolveConflict(path, localEntry.content, content, base);
+                        if (result.status === 'auto-merged') {
+                            await syncChange(path, result.content, 'merge');
+                        } else {
+                            // UI-Notification (siehe index.html)
+                            showConflictNotification(path, result.diff);
+                        }
+                        localEntry.version++;
+                        await INFINITY_FS.createEntry(localEntry);
+                    } catch (error) {
+                        console.error('[FS-SYNC] Error resolving conflict:', error);
+                        // Fallback: Keep local version and notify user
+                        if (typeof showConflictNotification === 'function') {
+                            showConflictNotification(path, 'Error resolving conflict: ' + error.message);
+                        }
                     }
-                    localEntry.version++;
-                    await INFINITY_FS.createEntry(localEntry);
                 }
             } else if (operation === 'create') {
                 // Neue Datei vom Server
