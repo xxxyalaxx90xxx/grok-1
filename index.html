@@ -384,8 +384,10 @@
             if (typeof syncChange !== 'undefined') {
                 syncChange(path, merged, 'merge');
             }
-            if (typeof addVersion !== 'undefined') {
-                addVersion(path, merged, getLocalVersion(path) + 1, 'manual');
+            if (window.CONFLICT_RESOLVER && typeof CONFLICT_RESOLVER.addVersion !== 'undefined') {
+                CONFLICT_RESOLVER.getLocalVersion(path).then(version => {
+                    CONFLICT_RESOLVER.addVersion(path, merged, version + 1, 'manual');
+                });
             }
             
             closeConflictModal();

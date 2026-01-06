@@ -50,7 +50,9 @@ function initSync(serverUrl = 'ws://localhost:8080') {
                     await INFINITY_FS.createEntry(localEntry);
                 } else if (version === localEntry.version) {
                     // Erweiterte Konfliktlösung
-                    const base = localEntry.history && localEntry.history[localEntry.history.length - 2]?.content || '';
+                    const base = localEntry.history && localEntry.history.length > 1 
+                        ? localEntry.history[localEntry.history.length - 2].content 
+                        : '';
                     const result = await CONFLICT_RESOLVER.resolveConflict(path, localEntry.content, content, base);
                     if (result.status === 'auto-merged') {
                         syncChange(path, result.content, 'merge');
@@ -105,9 +107,9 @@ function processQueue() {
 }
 
 // Hilfsfunktion: Hole lokale Version
-function getLocalVersion(path) {
-    // Platzhalter - sollte aus INFINITY_FS kommen
-    return 1;
+async function getLocalVersion(path) {
+    const entry = await INFINITY_FS.getEntry(path);
+    return entry.version || 0;
 }
 
 // Export
@@ -116,3 +118,6 @@ window.FS_SYNC = {
     syncChange,
     isConnected: () => isConnected
 };
+
+// Make syncChange available globally for conflict-resolver
+window.syncChange = syncChange;

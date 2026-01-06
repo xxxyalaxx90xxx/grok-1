@@ -23,25 +23,41 @@ function generateDiff(base, local, remote) {
     
     let merged = [];
     let i=0, j=0, k=0;
+    const maxLen = Math.max(baseLines.length, localLines.length, remoteLines.length);
+    
     while (i < baseLines.length || j < localLines.length || k < remoteLines.length) {
-        if (baseLines[i] === localLines[j] && baseLines[i] === remoteLines[k]) {
-            merged.push(baseLines[i]);
+        const baseLine = i < baseLines.length ? baseLines[i] : undefined;
+        const localLine = j < localLines.length ? localLines[j] : undefined;
+        const remoteLine = k < remoteLines.length ? remoteLines[k] : undefined;
+        
+        if (baseLine !== undefined && baseLine === localLine && baseLine === remoteLine) {
+            merged.push(baseLine);
             i++; j++; k++;
-        } else if (baseLines[i] !== localLines[j] && baseLines[i] !== remoteLines[k]) {
+        } else if (baseLine !== undefined && baseLine !== localLine && baseLine !== remoteLine && localLine !== undefined && remoteLine !== undefined) {
             merged.push('<<<<<<< LOCAL');
-            merged.push(localLines[j]);
+            merged.push(localLine);
             merged.push('=======');
-            merged.push(remoteLines[k]);
+            merged.push(remoteLine);
             merged.push('>>>>>>> REMOTE');
-            j++; k++;
-        } else if (baseLines[i] !== localLines[j]) {
-            merged.push(localLines[j]);
+            j++; k++; i++;
+        } else if (baseLine !== undefined && baseLine !== localLine && localLine !== undefined) {
+            merged.push(localLine);
+            j++; i++;
+        } else if (baseLine !== undefined && baseLine !== remoteLine && remoteLine !== undefined) {
+            merged.push(remoteLine);
+            k++; i++;
+        } else if (localLine !== undefined && remoteLine === undefined) {
+            merged.push(localLine);
             j++;
-        } else if (baseLines[i] !== remoteLines[k]) {
-            merged.push(remoteLines[k]);
+        } else if (remoteLine !== undefined && localLine === undefined) {
+            merged.push(remoteLine);
             k++;
+        } else {
+            i++; j++; k++;
         }
-        i++;
+        
+        // Safety check to prevent infinite loops
+        if (merged.length > maxLen * 3) break;
     }
     return merged.join('\n');
 }
