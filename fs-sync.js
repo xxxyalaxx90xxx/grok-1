@@ -46,7 +46,9 @@ function initSync(serverUrl = 'ws://localhost:8080') {
                     localEntry.content = content;
                     localEntry.version = version;
                     localEntry.modified = timestamp;
-                    await addVersion(path, content, version, 'remote');
+                    if (window.CONFLICT_RESOLVER) {
+                        await CONFLICT_RESOLVER.addVersion(path, content, version, 'remote');
+                    }
                     await INFINITY_FS.createEntry(localEntry);
                 } else if (version === localEntry.version) {
                     // Erweiterte Konfliktlösung
@@ -55,7 +57,7 @@ function initSync(serverUrl = 'ws://localhost:8080') {
                         : '';
                     const result = await CONFLICT_RESOLVER.resolveConflict(path, localEntry.content, content, base);
                     if (result.status === 'auto-merged') {
-                        syncChange(path, result.content, 'merge');
+                        await syncChange(path, result.content, 'merge');
                     } else {
                         // UI-Notification (siehe index.html)
                         showConflictNotification(path, result.diff);
@@ -73,19 +75,22 @@ function initSync(serverUrl = 'ws://localhost:8080') {
                     created: timestamp,
                     type: 'file'
                 });
-                await addVersion(path, content, 1, 'remote');
+                if (window.CONFLICT_RESOLVER) {
+                    await CONFLICT_RESOLVER.addVersion(path, content, 1, 'remote');
+                }
             }
         }
     };
 }
 
 // Sende Änderung an Server
-function syncChange(path, content, operation = 'update') {
+async function syncChange(path, content, operation = 'update') {
+    const version = await getLocalVersion(path);
     const msg = {
         type: 'fs-change',
         path,
         content,
-        version: getLocalVersion(path) || 1,
+        version: version || 1,
         operation,
         timestamp: Date.now()
     };

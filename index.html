@@ -376,18 +376,21 @@
             conflictCount.textContent = parseInt(conflictCount.textContent) + 1;
         }
         
-        function resolveManualConflict() {
+        async function resolveManualConflict() {
             const merged = document.getElementById('conflict-editor').value;
             const path = document.getElementById('conflict-path').textContent;
             
-            INFINITY_FS.updateFileContent(path, merged);
+            await INFINITY_FS.updateFileContent(path, merged);
             if (typeof syncChange !== 'undefined') {
-                syncChange(path, merged, 'merge');
+                await syncChange(path, merged, 'merge');
             }
             if (window.CONFLICT_RESOLVER && typeof CONFLICT_RESOLVER.addVersion !== 'undefined') {
-                CONFLICT_RESOLVER.getLocalVersion(path).then(version => {
-                    CONFLICT_RESOLVER.addVersion(path, merged, version + 1, 'manual');
-                });
+                try {
+                    const version = await CONFLICT_RESOLVER.getLocalVersion(path);
+                    await CONFLICT_RESOLVER.addVersion(path, merged, version + 1, 'manual');
+                } catch (e) {
+                    console.error('Error adding version:', e);
+                }
             }
             
             closeConflictModal();

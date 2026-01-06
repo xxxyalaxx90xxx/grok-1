@@ -96,7 +96,7 @@ async function resolveConflict(path, localContent, remoteContent, baseContent = 
         await addVersion(path, merged, currentVersion + 1, 'merged');
         // syncChange wird von fs-sync.js bereitgestellt
         if (typeof window.syncChange === 'function') {
-            window.syncChange(path, merged, 'update');
+            await window.syncChange(path, merged, 'update');
         }
         return { status: 'auto-merged', content: merged };
     } else {
