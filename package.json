@@ -1,0 +1,25 @@
+{
+  "name": "infinity-os-v2025",
+  "version": "2025.1.0",
+  "description": "INFINITY OS v2025 - Advanced Conflict Resolution System with WebSocket Sync",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "filesystem",
+    "sync",
+    "conflict-resolution",
+    "websocket",
+    "collaboration"
+  ],
+  "author": "INFINITY OS Team",
+  "license": "MIT",
+  "dependencies": {
+    "ws": "^8.14.2"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

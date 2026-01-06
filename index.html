@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INFINITY OS v2025 - Dashboard</title>
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --border: #333;
+            --text: #e0e0e0;
+            --accent: #00d4ff;
+            --error: #ff4444;
+            --success: #44ff44;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+        }
+        
+        .dashboard {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background: var(--surface);
+            border-bottom: 2px solid var(--accent);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--accent);
+        }
+        
+        .status {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--error);
+            animation: pulse 2s infinite;
+        }
+        
+        .status-indicator.connected {
+            background: var(--success);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .main-content {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 20px;
+            padding: 20px;
+            overflow: auto;
+        }
+        
+        .module {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .module-header {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--accent);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+        
+        .terminal {
+            background: #000;
+            font-family: 'Courier New', monospace;
+            padding: 15px;
+            border-radius: 5px;
+            flex: 1;
+            overflow-y: auto;
+            font-size: 0.9rem;
+        }
+        
+        .terminal-line {
+            margin-bottom: 5px;
+        }
+        
+        .terminal-prompt {
+            color: var(--accent);
+        }
+        
+        .file-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .file-item {
+            padding: 10px;
+            margin-bottom: 5px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .file-item:hover {
+            background: rgba(0, 212, 255, 0.1);
+        }
+        
+        .btn {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: opacity 0.2s;
+            margin: 5px;
+        }
+        
+        .btn:hover {
+            opacity: 0.8;
+        }
+        
+        .btn-secondary {
+            background: var(--border);
+            color: var(--text);
+        }
+        
+        #conflict-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            height: 80%;
+            background: var(--surface);
+            border: 2px solid var(--accent);
+            border-radius: 10px;
+            padding: 20px;
+            display: none;
+            z-index: 1000;
+            flex-direction: column;
+        }
+        
+        #conflict-modal .header {
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            background: transparent;
+        }
+        
+        #conflict-editor {
+            width: 100%;
+            flex: 1;
+            background: #111;
+            color: var(--text);
+            font-family: 'Courier New', monospace;
+            padding: 15px;
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            resize: none;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+        
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        
+        .cursor {
+            display: inline-block;
+            width: 8px;
+            height: 16px;
+            background: var(--accent);
+            margin-left: 2px;
+        }
+        
+        .version-info {
+            padding: 10px;
+            background: rgba(0, 212, 255, 0.1);
+            border-left: 3px solid var(--accent);
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .stat-card {
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--accent);
+        }
+        
+        .stat-label {
+            font-size: 0.85rem;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Header -->
+        <div class="header">
+            <h1>⚡ INFINITY OS v2025</h1>
+            <div class="status">
+                <span>Sync Status:</span>
+                <div class="status-indicator" id="sync-status"></div>
+                <span id="sync-text">Disconnected</span>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- File System Module -->
+            <div class="module">
+                <div class="module-header">📁 File System</div>
+                <div class="file-list" id="file-list">
+                    <div class="file-item">📄 test.txt</div>
+                    <div class="file-item">📄 example.js</div>
+                    <div class="file-item">📄 README.md</div>
+                </div>
+                <div>
+                    <button class="btn" onclick="createNewFile()">+ New File</button>
+                    <button class="btn btn-secondary" onclick="refreshFiles()">🔄 Refresh</button>
+                </div>
+            </div>
+            
+            <!-- Terminal Module -->
+            <div class="module">
+                <div class="module-header">💻 Terminal</div>
+                <div class="terminal" id="terminal">
+                    <div class="terminal-line">
+                        <span class="terminal-prompt">infinity-os@v2025:~$</span> Welcome to INFINITY OS
+                    </div>
+                    <div class="terminal-line">
+                        <span class="terminal-prompt">infinity-os@v2025:~$</span> System initialized with conflict resolver
+                    </div>
+                    <div class="terminal-line">
+                        <span class="terminal-prompt">infinity-os@v2025:~$</span> <span class="cursor" id="cursor"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Version History Module -->
+            <div class="module">
+                <div class="module-header">📚 Version History</div>
+                <div class="version-info">
+                    <strong>Current Version:</strong> 1.0.0<br>
+                    <strong>Last Modified:</strong> <span id="last-modified">-</span><br>
+                    <strong>Source:</strong> local
+                </div>
+                <div class="file-list" id="version-list">
+                    <div class="file-item">Version 1 - Initial commit (local)</div>
+                </div>
+            </div>
+            
+            <!-- System Stats Module -->
+            <div class="module">
+                <div class="module-header">📊 System Statistics</div>
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="files-count">3</div>
+                        <div class="stat-label">Files</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="sync-count">0</div>
+                        <div class="stat-label">Syncs</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="conflict-count">0</div>
+                        <div class="stat-label">Conflicts</div>
+                    </div>
+                </div>
+                <div style="margin-top: 20px;">
+                    <button class="btn" onclick="testConflict()">🔧 Test Conflict Resolution</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Konflikt-Resolver Modal -->
+        <div id="conflict-modal">
+            <div class="header">⚠️ Konfliktlösung: <span id="conflict-path"></span></div>
+            <textarea id="conflict-editor" placeholder="Merge conflicts will appear here..."></textarea>
+            <div class="modal-actions">
+                <button class="btn" onclick="resolveManualConflict()">✓ Merge übernehmen & Synchronisieren</button>
+                <button class="btn btn-secondary" onclick="closeConflictModal()">✗ Abbrechen</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="conflict-resolver.js"></script>
+    <script src="fs-sync.js"></script>
+    <script>
+        // Dummy INFINITY_FS Implementation (für Demo)
+        window.INFINITY_FS = {
+            entries: {},
+            async getEntry(path) {
+                return this.entries[path] || { path, content: '', version: 0, history: [] };
+            },
+            async createEntry(entry) {
+                this.entries[entry.path] = entry;
+            },
+            async updateFileContent(path, content) {
+                if (this.entries[path]) {
+                    this.entries[path].content = content;
+                }
+            }
+        };
+        
+        // Update Last Modified Time
+        document.getElementById('last-modified').textContent = new Date().toLocaleString();
+        
+        // Cursor blink
+        setInterval(() => {
+            const cursor = document.getElementById('cursor');
+            cursor.style.visibility = cursor.style.visibility === 'hidden' ? 'visible' : 'hidden';
+        }, 530);
+        
+        // Konflikt-Notification und Manual Resolver
+        function showConflictNotification(path, diff) {
+            document.getElementById('conflict-path').textContent = path;
+            document.getElementById('conflict-editor').value = diff;
+            document.getElementById('conflict-modal').style.display = 'flex';
+            
+            // Update conflict counter
+            const conflictCount = document.getElementById('conflict-count');
+            conflictCount.textContent = parseInt(conflictCount.textContent) + 1;
+        }
+        
+        async function resolveManualConflict() {
+            const merged = document.getElementById('conflict-editor').value;
+            const path = document.getElementById('conflict-path').textContent;
+            
+            await INFINITY_FS.updateFileContent(path, merged);
+            if (typeof syncChange !== 'undefined') {
+                await syncChange(path, merged, 'merge');
+            }
+            if (window.CONFLICT_RESOLVER && typeof CONFLICT_RESOLVER.addVersion !== 'undefined') {
+                try {
+                    const version = await CONFLICT_RESOLVER.getLocalVersion(path);
+                    await CONFLICT_RESOLVER.addVersion(path, merged, version + 1, 'manual');
+                } catch (e) {
+                    console.error('Error adding version:', e);
+                }
+            }
+            
+            closeConflictModal();
+            addTerminalLine('Conflict resolved for: ' + path);
+        }
+        
+        function closeConflictModal() {
+            document.getElementById('conflict-modal').style.display = 'none';
+        }
+        
+        function addTerminalLine(text) {
+            const terminal = document.getElementById('terminal');
+            const line = document.createElement('div');
+            line.className = 'terminal-line';
+            line.innerHTML = '<span class="terminal-prompt">infinity-os@v2025:~$</span> ' + text;
+            terminal.insertBefore(line, terminal.lastElementChild);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+        
+        function createNewFile() {
+            const fileName = prompt('Enter file name:');
+            if (fileName) {
+                addTerminalLine('Created file: ' + fileName);
+                const fileList = document.getElementById('file-list');
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.textContent = '📄 ' + fileName;
+                fileList.appendChild(fileItem);
+                
+                // Update file count
+                const filesCount = document.getElementById('files-count');
+                filesCount.textContent = parseInt(filesCount.textContent) + 1;
+            }
+        }
+        
+        function refreshFiles() {
+            addTerminalLine('Refreshing file list...');
+            const syncCount = document.getElementById('sync-count');
+            syncCount.textContent = parseInt(syncCount.textContent) + 1;
+        }
+        
+        function testConflict() {
+            addTerminalLine('Testing conflict resolution...');
+            const testDiff = `Line 1
+Line 2
+<<<<<<< LOCAL
+Local change here
+=======
+Remote change here
+>>>>>>> REMOTE
+Line 4`;
+            showConflictNotification('/test/conflict.txt', testDiff);
+        }
+        
+        // Registriere Callback für UI (mit Wildcard-Support)
+        if (window.CONFLICT_RESOLVER) {
+            CONFLICT_RESOLVER.registerConflictCallback('*', (diff) => {
+                showConflictNotification('*', diff);
+            });
+        }
+        
+        // Initialize Sync Connection
+        function initSyncConnection() {
+            if (window.FS_SYNC) {
+                try {
+                    FS_SYNC.initSync('ws://localhost:8080');
+                    
+                    // Update status indicator
+                    setTimeout(() => {
+                        const statusIndicator = document.getElementById('sync-status');
+                        const statusText = document.getElementById('sync-text');
+                        if (FS_SYNC.isConnected()) {
+                            statusIndicator.classList.add('connected');
+                            statusText.textContent = 'Connected';
+                            addTerminalLine('Sync connection established');
+                        }
+                    }, 1000);
+                } catch (e) {
+                    addTerminalLine('Sync connection failed: ' + e.message);
+                }
+            }
+        }
+        
+        // Wait for scripts to load then initialize
+        setTimeout(initSyncConnection, 500);
+    </script>
+</body>
+</html>
